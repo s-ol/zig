@@ -602,6 +602,22 @@ static void anal_dump_decl(AnalDumpCtx *ctx, Tld *tld) {
 
         jw_object_field(jw, "name");
         jw_string(jw, buf_ptr(tld->name));
+
+        Scope* scope = tld->parent_scope;
+        while (scope != nullptr) {
+            if (scope->id == ScopeIdDecls) {
+                ScopeDecls *parent_scope = reinterpret_cast<ScopeDecls *>(scope);
+
+                if (parent_scope->container_type) {
+                    jw_object_field(jw, "container");
+                    anal_dump_type_ref(ctx, parent_scope->container_type);
+                }
+
+                break;
+            }
+
+            scope = scope->parent;
+        }
     }
 
     switch (tld->id) {
@@ -828,6 +844,25 @@ static void anal_dump_type(AnalDumpCtx *ctx, ZigType *ty) {
                 jw_object_field(jw, "file");
                 anal_dump_file_ref(ctx, path_buf);
             }
+
+            {
+                Scope* scope = ty->data.structure.decls_scope->base.parent;
+                while (scope != nullptr) {
+                    if (scope->id == ScopeIdDecls) {
+                        ScopeDecls *parent_scope = reinterpret_cast<ScopeDecls *>(scope);
+
+                        if (parent_scope->container_type) {
+                            jw_object_field(jw, "parent");
+                            anal_dump_type_ref(ctx, parent_scope->container_type);
+                        }
+
+                        break;
+                    }
+
+                    scope = scope->parent;
+                }
+            }
+
             break;
         }
         case ZigTypeIdUnion: {
@@ -1064,7 +1099,7 @@ static void anal_dump_type(AnalDumpCtx *ctx, ZigType *ty) {
             break;
         }
         case ZigTypeIdFnFrame: {
-            jw_object_field(jw, "fn_name");
+            jw_object_field(jw, "name");
             jw_string(jw, buf_ptr(&ty->data.frame.fn->symbol_name));
 
             jw_object_field(jw, "fn");
