@@ -723,6 +723,10 @@ static void anal_dump_value(AnalDumpCtx *ctx, AstNode *source_node, ZigType *ty,
             jw_bigint(&ctx->jw, &value->data.x_bigint);
             return;
         }
+        case ZigTypeIdBool: {
+            jw_bool(&ctx->jw, &value->data.x_bool);
+            return;
+        }
         default:
             jw_null(&ctx->jw);
             return;
